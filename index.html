@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Seguridad de Inputs (XSS - Cross Site Scripting)</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+    </head>
+    <body class="bg-slate-500 flex flex-col items-center h-screen w-full">
+        <h1 class="font-bold my-12 text-center text-3xl">Aprendiendo a proteger nuestros inputs de XSS</h1>
+        <div action="" class="mt-32">
+            <label for="nombre" class="font-bold">Nombre:</label>
+            <input type="text" name="nombre" id="nombre" class="border border-black border-solid rounded-lg pl-3 text-xl w-[700px] h-[150px]">           
+            <button id="enviar" class="rounded-xl bg-green-600 font-bold text-lg px-3 py-1">Enviar</button>
+        </div>
+
+        <div id="salida">
+            <!-- Aquí se mostrará el nombre ingresado -->
+        </div>
+    </body>
+    <script src="index.js"></script>
+</html>
+
+
+<!-- 
+        Inyección de Input
+
+        - <p>Hola Mundo!</p>
+            En este caso, el navegador renderizará el texto "Hola Mundo!" como un párrafo.
+
+        - <img src="imagen.jpg" alt="Imagen de prueba">
+            En este caso, el navegador intentará cargar la imagen "imagen.jpg" y mostrarla en la página.
+
+        - console.log('¡Inyección exitosa!');
+            En este caso, el navegador agregará el texto "¡Inyección exitosa!" al contenedor con id "output".
+
+        - <script>document.body.innerHTML = '';</script>
+            En este caso, el navegador e deberia jecutar el script y eliminar todo el contenido del body.
+            Sin embargo, es posible que el navegador no ejecute el script debido a las políticas de seguridad.
+            que previenen la ejecución de scripts inyectados de esta manera para evitar 
+            ataques de XSS (Cross-Site Scripting)
+
+        - <script>alert('¡Inyección exitosa!');</script>
+
+        - <script>
+            function saludar(){
+                setTimeout(()=>{
+                alert('¡Inyección exitosa!');
+                }, 5000);
+            }
+            saludar();
+        </script>
+
+
+    - *** Burlando las políticas de seguridad de los navegadores *** -
+
+        1- Inyección de Script con Eventos HTML: 
+            - <img src="invalid" onerror="alert('¡Inyección exitosa!');">
+            Explicacion de funcionamiento:
+                En este caso, el navegador intentará cargar la imagen "invalid" y, al no encontrarla, 
+                ejecutará el evento onerror, que mostrará una alerta con el mensaje "¡Inyección exitosa!".
+                Esta es una manera común de burlar las políticas de seguridad de los navegadores para 
+                ejecutar scripts en páginas web (XSS o Cross-Site Scripting)
+
+            - <div onmouseover="alert('¡Inyección exitosa!')">Pasa el ratón sobre mí</div>
+            Explicacion de funcionamiento:
+                En este caso, el navegador ejecutará el evento onmouseover cuando el usuario pase el ratón sobre el div,
+                lo que mostrará una alerta con el mensaje "¡Inyección exitosa!".
+
+            - <button onclick="window.location.href = 'https://www.google.com';">Haz clic aquí</button>
+            Explicacion de funcionamiento:
+                En este caso, el navegador redirigirá al usuario a la página de Google cuando haga clic en el botón.
+
+            - <button onclick="(()=>{const contenido='Te he asustado!';const enlaceDescarga=document.createElement('a');enlaceDescarga.href='data:text/plain;charset=utf-8,'+encodeURIComponent(contenido);enlaceDescarga.download='archivo.txt';enlaceDescarga.style.display='none';document.body.appendChild(enlaceDescarga);enlaceDescarga.click();document.body.removeChild(enlaceDescarga)})()">Ver Pagina</button>
+                Explicacion de funcionamiento:
+                // Crear el contenido del archivo de texto
+                const contenido = 'Te he asustado!';
+                
+                // Crear un elemento <a> para el enlace de descarga
+                const enlaceDescarga = document.createElement('a');
+                
+                // Establecer la URL del enlace de descarga como un enlace directo a los datos de texto
+                enlaceDescarga.href = 'data:text/plain;charset=utf-8,'+encodeURIComponent(contenido);
+                
+                // Establecer el nombre del archivo a descargar
+                enlaceDescarga.download = 'archivo.txt';
+                
+                // Ocultar el enlace de descarga (opcional)
+                enlaceDescarga.style.display = 'none';
+                
+                // Agregar el enlace de descarga al cuerpo del documento
+                document.body.appendChild(enlaceDescarga);
+                
+                // Simular un clic en el enlace de descarga
+                enlaceDescarga.click();
+                
+                // Eliminar el enlace de descarga del DOM después de hacer clic en él
+                document.body.removeChild(enlaceDescarga);
+
+
+        2- Inyección de Script con Enlaces HTML:
+            - <a href="javascript:alert('¡Inyección exitosa!');">Haz clic aquí</a>
+            Explicacion de funcionamiento:
+                En este caso, el navegador ejecutará el script "alert('¡Inyección exitosa!');" cuando el usuario haga clic en el enlace.
+                Esto mostrará una alerta con el mensaje "¡Inyección exitosa!".
+
+            - <a href="#" onclick="document.body.innerHTML = '';">Haz clic aquí</a>
+            Explicacion de funcionamiento:
+                En este caso, el navegador ejecutará el script "document.body.innerHTML = '';" cuando el usuario haga clic en el enlace.
+                Esto eliminará todo el contenido del body de la página.
+        
+        3- Inyección de Script con Formularios HTML:
+            - <form action="javascript:alert('¡Inyección exitosa!');">
+                <input type="submit" value="Enviar">
+            </form>
+
+        
+        4- Inyección de Script para realizar petición HTTP:
+            - <button onclick="(fetch('https://rickandmortyapi.com/api/character').then(res => res.json()).then(data => console.log(data.results)))()">Ver Personajes</button>
+            Explicacion de funcionamiento:
+                En este caso, el navegador realizará una petición HTTP a la API de Rick and Morty y mostrará los resultados en la consola del navegador.
+                Esto es un ejemplo de cómo un atacante podría usar la inyección de input para realizar peticiones HTTP no autorizadas desde la página web usando tu dominio (La IP de la victima).
+
+
+         - *** Prevención de Inyección de Input *** -
+
+            Puedes prevenir la inyección de input en tu aplicación siguiendo estas recomendaciones:
+
+            1- Validar los campos de entrada con expresiones regulares o funciones de validación.
+            2- Escapar los caracteres especiales en los campos de entrada antes de mostrarlos en la página.
+            3- Usando DOMPurify para limpiar y sanitizar el contenido HTML antes de mostrarlo en la página. 
+                https://www.npmjs.com/package/dompurify
+        
+-->
